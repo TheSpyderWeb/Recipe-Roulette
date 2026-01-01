@@ -35,14 +35,18 @@ frontend/
 ├─ login.html        # Login page
 ├─ signup.html       # Sign-up page
 ├─ profile.html      # User profile page
-│
+
+
 ├─ css/
 │  └─ styles.css     # Global styles
-│
+
+
 ├─ js/
 │  ├─ script.js      # Recipe search and favorites logic
 │  ├─ chatbot.js     # ChefBot logic
 │  └─ auth.js        # Firebase authentication logic
-│
+
+
 └─ img/
 └─  ALL image
+
