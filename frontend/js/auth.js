@@ -1,4 +1,5 @@
-import { auth, db } from './firebase-config.js';
+// ----------------- AUTHENTICATION (SIGN UP / LOGIN) -----------------
+import { auth, db } from "./firebase-config.js";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword
@@ -9,47 +10,51 @@ import {
   setDoc
 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-/* ---------- REGISTER ---------- */
+/* ---------- REGISTER USER ---------- */
 export async function registerUser(event) {
   event.preventDefault();
 
-  const fullName = document.getElementById('signup-fullname').value;
-  const email = document.getElementById('signup-email').value;
-  const username = document.getElementById('signup-username').value;
-  const password = document.getElementById('signup-password').value;
+  // Get input values
+  const fullName = document.getElementById("signup-fullname").value.trim();
+  const email = document.getElementById("signup-email").value.trim();
+  const password = document.getElementById("signup-password").value;
 
   try {
+    // Create user with Firebase Auth
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-
     const user = userCredential.user;
 
-    // STORE EXTRA DATA IN FIRESTORE
+    // Store user info in Firestore
     await setDoc(doc(db, "users", user.uid), {
       fullName,
-      username,
       email,
       createdAt: new Date()
     });
 
-    alert("Sign-up successful!");
+    // Alert user and redirect to login page
+    alert("Account created successfully! Please log in.");
     window.location.href = "login.html";
 
   } catch (error) {
+    console.error("Signup error:", error);
     alert(error.message);
   }
 }
 
-/* ---------- LOGIN ---------- */
+/* ---------- LOGIN USER ---------- */
 export async function loginUser(event) {
   event.preventDefault();
 
-  const email = document.getElementById('login-email').value;
-  const password = document.getElementById('login-password').value;
+  const email = document.getElementById("login-email").value.trim();
+  const password = document.getElementById("login-password").value;
 
   try {
     await signInWithEmailAndPassword(auth, email, password);
+    // Redirect to profile page after successful login
     window.location.href = "profile.html";
+
   } catch (error) {
-    alert(error.message);
+    console.error("Login error:", error);
+    alert("Invalid email or password. Please try again.");
   }
 }

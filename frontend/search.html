@@ -11,18 +11,13 @@
   <!-- NAVBAR -->
   <nav>
     <div class="logo">Recipe<span>Roulette</span></div>
-    <ul>
-      <a href="index.html"><button>Home</button></a>
-      <a href="search.html"><button>Search</button></a>
-      <a href="login.html"><button>Login</button></a>
-      <a href="signup.html"><button>Sign Up</button></a>
-    </ul>
+    <ul></ul> <!-- Navbar buttons injected via JS -->
   </nav>
 
-  <!-- HERO BACKGROUND FULL PAGE -->
+  <!-- FULL PAGE SEARCH SECTION -->
   <main class="search-page">
     <div class="background-overlay">
-      
+
       <!-- SEARCH BAR -->
       <section class="search-section">
         <h1>Find Your Next Recipe</h1>
@@ -32,27 +27,17 @@
         </div>
       </section>
 
-      <!-- RESULTS + FAVORITES -->
+      <!-- RESULTS & FAVORITES -->
       <section class="results-favorites">
         <div class="results-section">
-          <div id="meals" class="meals-grid"></div>
+          <div id="meals" class="meals-grid"></div> <!-- Meals injected via JS -->
         </div>
 
         <aside class="favorites-section">
           <h2>Favorites</h2>
-          <ul id="fav-meals"></ul>
+          <ul id="fav-meals"></ul> <!-- Favorite meals injected via JS -->
         </aside>
       </section>
-
-      <!-- CHATBOT 
-      <div class="chatbot-section">
-        <div class="chat-header">ChefBot</div>
-        <div class="chat-messages" id="chatMessages"></div>
-        <div class="chat-input">
-          <input type="text" id="chatInput" placeholder="Ask me a recipe...">
-          <button id="chatSendBtn">Send</button>        
-        </div>
-      </div>-->
 
       <!-- MEAL POPUP -->
       <div id="meal-popup" class="hidden">
@@ -63,8 +48,9 @@
     </div>
   </main>
 
-  <script src="js/script.js"></script>
-  <script src="js/chatbot.js"></script>
+  <!-- Navbar & meals JS -->
+  <script type="module" src="js/navbar.js"></script>
+  <script type="module" src="js/meals.js"></script>
 
 </body>
 </html>
