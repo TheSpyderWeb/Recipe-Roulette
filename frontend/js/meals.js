@@ -7,6 +7,12 @@ const popupCloseBtn = document.getElementById("close-popup");
 const searchTerm = document.getElementById("search-term");
 const searchBtn = document.getElementById("search");
 
+// ----------------- DATA STRUCTURE: HASH MAP CACHE -----------------
+// In-memory cache for favorite meals
+// Key: meal ID, Value: meal object
+// Enables O(1) lookup and avoids repeated API calls
+const favoriteMealsMap = new Map();
+
 if (mealsEl) {
   getRandomMeal();
   fetchFavMeals();
@@ -21,7 +27,9 @@ async function getRandomMeal() {
 
 // Search meals by term
 async function getMealsBySearch(term) {
-  const res = await fetch(`https://www.themealdb.com/api/json/v1/1/search.php?s=${term}`);
+  const res = await fetch(
+    `https://www.themealdb.com/api/json/v1/1/search.php?s=${term}`
+  );
   const data = await res.json();
   return data.meals;
 }
@@ -42,38 +50,58 @@ function addMeal(mealData, random = false) {
     </div>
   `;
 
-  // Favorite button
   meal.querySelector(".fav-btn").addEventListener("click", (e) => {
     e.stopPropagation();
     toggleMealLS(mealData.idMeal);
     fetchFavMeals();
   });
 
-  // Click to show popup
   meal.addEventListener("click", () => showMealInfo(mealData));
   mealsEl.appendChild(meal);
 }
 
-// LocalStorage toggle
+// ----------------- LOCAL STORAGE -----------------
+
 function toggleMealLS(id) {
   const ids = getMealsLS();
   ids.includes(id)
-    ? localStorage.setItem("mealIds", JSON.stringify(ids.filter(i => i !== id)))
-    : localStorage.setItem("mealIds", JSON.stringify([...ids, id]));
+    ? localStorage.setItem(
+        "mealIds",
+        JSON.stringify(ids.filter(i => i !== id))
+      )
+    : localStorage.setItem(
+        "mealIds",
+        JSON.stringify([...ids, id])
+      );
 }
 
-// Get favorites from LocalStorage
 function getMealsLS() {
   return JSON.parse(localStorage.getItem("mealIds")) || [];
 }
 
-// Display favorite meals
+// ----------------- FAVORITES (DSA ENHANCED) -----------------
+
 async function fetchFavMeals() {
   favoriteContainer.innerHTML = "";
+  favoriteMealsMap.clear(); // reset Map cache before rebuilding
+
   for (const id of getMealsLS()) {
-    const res = await fetch(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${id}`);
+
+    // O(1) lookup using Map instead of looping through arrays
+    if (favoriteMealsMap.has(id)) {
+      addMealFav(favoriteMealsMap.get(id));
+      continue;
+    }
+
+    const res = await fetch(
+      `https://www.themealdb.com/api/json/v1/1/lookup.php?i=${id}`
+    );
     const data = await res.json();
-    addMealFav(data.meals[0]);
+    const meal = data.meals[0];
+
+    // Cache the meal in the Map for fast future access
+    favoriteMealsMap.set(id, meal);
+    addMealFav(meal);
   }
 }
 
@@ -95,7 +123,8 @@ function addMealFav(meal) {
   favoriteContainer.appendChild(li);
 }
 
-// Show meal popup
+// ----------------- POPUP -----------------
+
 function showMealInfo(meal) {
   mealInfoEl.innerHTML = `
     <h1>${meal.strMeal}</h1>
@@ -105,10 +134,10 @@ function showMealInfo(meal) {
   mealPopup.classList.remove("hidden");
 }
 
-// Close popup
 popupCloseBtn.onclick = () => mealPopup.classList.add("hidden");
 
-// Search button
+// ----------------- SEARCH -----------------
+
 searchBtn.onclick = async () => {
   mealsEl.innerHTML = "";
   const meals = await getMealsBySearch(searchTerm.value);
