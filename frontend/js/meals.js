@@ -1,3 +1,7 @@
+// ----------------- RESET FAVORITES FOR NEW USER -----------------
+// Clears favorites whenever a new user/session loads the app
+localStorage.removeItem("mealIds");
+
 // ----------------- MEAL SEARCH & FAVORITES -----------------
 const mealsEl = document.getElementById("meals");
 const favoriteContainer = document.getElementById("fav-meals");
@@ -7,25 +11,18 @@ const popupCloseBtn = document.getElementById("close-popup");
 const searchTerm = document.getElementById("search-term");
 const searchBtn = document.getElementById("search");
 
-// ----------------- DATA STRUCTURE: HASH MAP CACHE -----------------
-// In-memory cache for favorite meals
-// Key: meal ID, Value: meal object
-// Enables O(1) lookup and avoids repeated API calls
-const favoriteMealsMap = new Map();
+// Load initial content
+getRandomMeal();
+fetchFavMeals();
 
-if (mealsEl) {
-  getRandomMeal();
-  fetchFavMeals();
-}
-
-// Fetch random meal
+// ----------------- FETCH RANDOM MEAL -----------------
 async function getRandomMeal() {
   const res = await fetch("https://www.themealdb.com/api/json/v1/1/random.php");
   const data = await res.json();
   addMeal(data.meals[0], true);
 }
 
-// Search meals by term
+// ----------------- SEARCH MEALS -----------------
 async function getMealsBySearch(term) {
   const res = await fetch(
     `https://www.themealdb.com/api/json/v1/1/search.php?s=${term}`
@@ -34,7 +31,7 @@ async function getMealsBySearch(term) {
   return data.meals;
 }
 
-// Display meal card
+// ----------------- DISPLAY MEAL -----------------
 function addMeal(mealData, random = false) {
   const meal = document.createElement("div");
   meal.classList.add("meal");
@@ -50,96 +47,107 @@ function addMeal(mealData, random = false) {
     </div>
   `;
 
-  meal.querySelector(".fav-btn").addEventListener("click", (e) => {
+  const btn = meal.querySelector(".fav-btn");
+
+  btn.addEventListener("click", (e) => {
     e.stopPropagation();
     toggleMealLS(mealData.idMeal);
     fetchFavMeals();
   });
 
-  meal.addEventListener("click", () => showMealInfo(mealData));
+  meal.addEventListener("click", () => {
+    showMealInfo(mealData);
+  });
+
   mealsEl.appendChild(meal);
 }
 
 // ----------------- LOCAL STORAGE -----------------
-
-function toggleMealLS(id) {
-  const ids = getMealsLS();
-  ids.includes(id)
-    ? localStorage.setItem(
-        "mealIds",
-        JSON.stringify(ids.filter(i => i !== id))
-      )
-    : localStorage.setItem(
-        "mealIds",
-        JSON.stringify([...ids, id])
-      );
-}
-
 function getMealsLS() {
-  return JSON.parse(localStorage.getItem("mealIds")) || [];
+  const mealIds = JSON.parse(localStorage.getItem("mealIds"));
+  return mealIds === null ? [] : mealIds;
 }
 
-// ----------------- FAVORITES (DSA ENHANCED) -----------------
+function toggleMealLS(mealId) {
+  const mealIds = getMealsLS();
 
-async function fetchFavMeals() {
-  favoriteContainer.innerHTML = "";
-  favoriteMealsMap.clear(); // reset Map cache before rebuilding
-
-  for (const id of getMealsLS()) {
-
-    // O(1) lookup using Map instead of looping through arrays
-    if (favoriteMealsMap.has(id)) {
-      addMealFav(favoriteMealsMap.get(id));
-      continue;
-    }
-
-    const res = await fetch(
-      `https://www.themealdb.com/api/json/v1/1/lookup.php?i=${id}`
+  if (mealIds.includes(mealId)) {
+    localStorage.setItem(
+      "mealIds",
+      JSON.stringify(mealIds.filter(id => id !== mealId))
     );
-    const data = await res.json();
-    const meal = data.meals[0];
-
-    // Cache the meal in the Map for fast future access
-    favoriteMealsMap.set(id, meal);
-    addMealFav(meal);
+  } else {
+    localStorage.setItem(
+      "mealIds",
+      JSON.stringify([...mealIds, mealId])
+    );
   }
 }
 
-// Create favorite meal element
-function addMealFav(meal) {
-  const li = document.createElement("li");
-  li.innerHTML = `
-    <img src="${meal.strMealThumb}">
-    <span>${meal.strMeal}</span>
-    <button>Remove</button>
+// ----------------- FAVORITES -----------------
+async function fetchFavMeals() {
+  favoriteContainer.innerHTML = "";
+
+  const mealIds = getMealsLS();
+
+  for (let i = 0; i < mealIds.length; i++) {
+    const mealId = mealIds[i];
+
+    const res = await fetch(
+      `https://www.themealdb.com/api/json/v1/1/lookup.php?i=${mealId}`
+    );
+    const data = await res.json();
+
+    addMealFav(data.meals[0]);
+  }
+}
+
+function addMealFav(mealData) {
+  const favMeal = document.createElement("li");
+
+  favMeal.innerHTML = `
+    <img src="${mealData.strMealThumb}">
+    <span>${mealData.strMeal}</span>
+    <button>X</button>
   `;
 
-  li.querySelector("button").onclick = () => {
-    toggleMealLS(meal.idMeal);
-    fetchFavMeals();
-  };
+  const btn = favMeal.querySelector("button");
 
-  li.onclick = () => showMealInfo(meal);
-  favoriteContainer.appendChild(li);
+  btn.addEventListener("click", () => {
+    toggleMealLS(mealData.idMeal);
+    fetchFavMeals();
+  });
+
+  favMeal.addEventListener("click", () => {
+    showMealInfo(mealData);
+  });
+
+  favoriteContainer.appendChild(favMeal);
 }
 
 // ----------------- POPUP -----------------
-
-function showMealInfo(meal) {
+function showMealInfo(mealData) {
   mealInfoEl.innerHTML = `
-    <h1>${meal.strMeal}</h1>
-    <img src="${meal.strMealThumb}">
-    <p>${meal.strInstructions}</p>
+    <h1>${mealData.strMeal}</h1>
+    <img src="${mealData.strMealThumb}">
+    <p>${mealData.strInstructions}</p>
   `;
+
   mealPopup.classList.remove("hidden");
 }
 
-popupCloseBtn.onclick = () => mealPopup.classList.add("hidden");
+popupCloseBtn.addEventListener("click", () => {
+  mealPopup.classList.add("hidden");
+});
 
-// ----------------- SEARCH -----------------
-
-searchBtn.onclick = async () => {
+// ----------------- SEARCH BUTTON -----------------
+searchBtn.addEventListener("click", async () => {
   mealsEl.innerHTML = "";
-  const meals = await getMealsBySearch(searchTerm.value);
-  if (meals) meals.forEach(m => addMeal(m));
-};
+
+  const search = searchTerm.value;
+  const meals = await getMealsBySearch(search);
+
+  if (meals) {
+    meals.forEach(meal => addMeal(meal));
+  }
+});
